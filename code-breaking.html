@@ -1,0 +1,253 @@
+<!--
+   Code Breaker Algorithm
+   
+   Copyright 2025 John Francis Mukulu <john.f.mukulu@gmail.com>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+   MA 02110-1301, USA.
+   
+   
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Cracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 50%; margin: auto; text-align: center; }
+        table { margin: auto; border-collapse: collapse; }
+        td { padding: 10px; }
+        input { width: 30px; text-align: center; }
+        .output { margin-top: 20px; white-space: pre-wrap; text-align: left; border: 1px solid #ddd; padding: 10px; }
+        #available-combinations {background-color: grey;}
+        #final-result { background-color:green;}
+        #verification-process{background-color:yellow;}
+        div.container > h2 {color:green;}
+        div.container > table {width:700px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>TEST-DRIVE OF THE CODE-BREAKING ALGORITHM</h2>
+        <table border="1">
+            <tr>
+                <th>Hint</th>
+                <th>Correct Count</th>
+                <th>Correct Place</th>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="h1-1" maxlength="1">
+                    <input type="text" id="h1-2" maxlength="1">
+                    <input type="text" id="h1-3" maxlength="1">
+                    <input type="text" id="h1-4" maxlength="1">
+                </td>
+                <td><input type="text" id="c1" maxlength="1"> number is correct but </td>
+                <td><input type="text" id="p1" maxlength="1"> number in correct place.</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="h2-1" maxlength="1">
+                    <input type="text" id="h2-2" maxlength="1">
+                    <input type="text" id="h2-3" maxlength="1">
+                    <input type="text" id="h2-4" maxlength="1">
+                </td>
+                <td><input type="text" id="c2" maxlength="1"> number is correct but </td>
+                <td><input type="text" id="p2" maxlength="1"> number in correct place.</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="h3-1" maxlength="1">
+                    <input type="text" id="h3-2" maxlength="1">
+                    <input type="text" id="h3-3" maxlength="1">
+                    <input type="text" id="h3-4" maxlength="1">
+                </td>
+                <td><input type="text" id="c3" maxlength="1"> number is correct but </td>
+                <td><input type="text" id="p3" maxlength="1"> number in correct place.</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="h4-1" maxlength="1">
+                    <input type="text" id="h4-2" maxlength="1">
+                    <input type="text" id="h4-3" maxlength="1">
+                    <input type="text" id="h4-4" maxlength="1">
+                </td>
+                <td><input type="text" id="c4" maxlength="1"> number is correct but </td>
+                <td><input type="text" id="p4" maxlength="1"> number in correct place.</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="h5-1" maxlength="1">
+                    <input type="text" id="h5-2" maxlength="1">
+                    <input type="text" id="h5-3" maxlength="1">
+                    <input type="text" id="h5-4" maxlength="1">
+                </td>
+                <td><input type="text" id="c5" maxlength="1"> number is correct but </td>
+                <td><input type="text" id="p5" maxlength="1"> number in correct place.</td>
+            </tr>
+        </table>
+        <br>
+        <button onclick="solvePuzzle()">Search for Solution</button>
+        <div class="output" id="hints-list">Constructed Hints List will be displayed here</div>
+        <div class="output" id="filtered-digits">Filtered Digits will be displayed here</div>
+        <div class="output" id="available-combinations">Total possible combinations will be displayed here</div>
+        <div class="output" id="final-result">Final results will be displayed here</div>
+        <div class="output" id="verification-process">Checking process will be displayed here</div>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let hints = [
+                [9285,1,0],
+                [1937,2,0],
+                [5201,1,1],
+                [6507,0,0],
+                [8524,2,0]
+            ];
+            
+            hints.forEach((hint, i) => {
+                let hintStr = hint[0].toString().padStart(4, '0');
+                for (let j = 0; j < 4; j++) {
+                    document.getElementById(`h${i+1}-${j+1}`).value = hintStr[j];
+                }
+                document.getElementById(`c${i+1}`).value = hint[1];
+                document.getElementById(`p${i+1}`).value = hint[2];
+            });
+        });
+
+        function checkHint(code, hint, correctCount, correctPlace, hintNumber) {
+            let correctPositions = 0; // Count of numbers in the correct place
+            let matchingDigits = new Set(); // Set to track matching digits (ignoring positions)
+            let correctlyPlacedDigits = new Set(); // Set to track correctly placed digits
+            let hintStr = hint.toString();
+            let codeStr = code.toString();
+
+            // Step 1: Identify digits that match in any position
+            for (let i = 0; i < 4; i++) {
+                if (hintStr.includes(codeStr[i])) {
+                    matchingDigits.add(codeStr[i]); // Add to matching set if digit is in hint
+                }
+            }
+
+            // Step 2: Count how many digits are correctly placed
+            for (let i = 0; i < 4; i++) {
+                if (codeStr[i] === hintStr[i]) {
+                    correctlyPlacedDigits.add(codeStr[i]);
+                    correctPositions++;
+                }
+            }
+
+            // Step 3: Validate against correctCount and correctPlace
+            let totalMatching = matchingDigits.size;
+            let log = `HINT${hintNumber}[Digits:${hint},Correct:${correctCount},CorrectPlace:${correctPlace})\n`;
+
+            if (totalMatching === correctCount && correctPositions === correctPlace) {
+                log += `✅ Hint ${hintNumber} PASSED: Correct count and correct place match the given values. Matching:${totalMatching}[${Array.from(matchingDigits).join(', ')}], CorrectlyPlaced:${correctPositions}[${Array.from(correctlyPlacedDigits).join(', ')}] \n`;
+                return [true, log];
+            } else {
+                log += `❌ Hint ${hintNumber} FAILED: `;
+                if (totalMatching !== correctCount) {
+                    log += `Expected ${correctCount} matching digits, but found ${totalMatching}[${Array.from(matchingDigits).join(', ')}]. `;
+                }
+                if (correctPositions !== correctPlace) {
+                    log += `Expected ${correctPlace} correctly placed digits, but found ${correctPositions}[${Array.from(correctlyPlacedDigits).join(', ')}].`;
+                }
+                log += "\n";
+                return [false, log];
+            }
+        }
+
+
+        function solvePuzzle() {
+            let hints = [];
+            for (let i = 1; i <= 5; i++) {
+                let hint = "";
+                for (let j = 1; j <= 4; j++) {
+                    hint += document.getElementById(`h${i}-${j}`).value;
+                }
+                let correctCount = parseInt(document.getElementById(`c${i}`).value);
+                let correctPlace = parseInt(document.getElementById(`p${i}`).value);
+                hints.push([hint, correctCount, correctPlace]);
+            }
+            let tableHtml = "<table border='1'><tr><th>Hint digits</th><th>Correct Count</th><th>Correct Place</th></tr>";
+            hints.forEach(hint => {
+                tableHtml += `<tr><td>${hint[0]}</td><td>${hint[1]}</td><td>${hint[2]}</td></tr>`;
+            });
+            tableHtml += "</table>";
+            
+            document.getElementById("hints-list").innerHTML = tableHtml;
+
+            let digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            hints.forEach(([hint, correctCount, correctPlace]) => {
+                if (correctCount === 0 && correctPlace === 0) {
+                    hint.split('').forEach(num => {
+                        let index = digits.indexOf(num);
+                        if (index !== -1) digits.splice(index, 1);
+                    });
+                }
+            });
+            document.getElementById("filtered-digits").textContent = `Filtered Digits(based on 0 correct count and 0 correct place): ${digits.join(", ")}`;
+            
+
+            document.getElementById("available-combinations").textContent = "Processing available combinations...";
+            document.getElementById("verification-process").textContent = "";
+            document.getElementById("final-result").textContent = "";
+            let allCombinations = [];
+            
+            function permute(arr, m = []) {
+                if (m.length === 4) {
+                    allCombinations.push(m.join(""));
+                } else {
+                    arr.forEach((v, i) => permute(arr.slice(0, i).concat(arr.slice(i + 1)), m.concat(v)));
+                }
+            }
+            permute(digits);
+
+            document.getElementById("available-combinations").textContent = `Available Combinations: ${allCombinations.length}\n` + allCombinations.join(", ");
+            
+            
+            let validCombinations = [];
+            let processLog = "";
+            
+            allCombinations.forEach((code, idx) => {
+                let valid = true;
+                let logEntry = `\n\n[${idx + 1}/${allCombinations.length}] TESTING: ${code}\n`;
+                
+                hints.forEach(([hint, correctCount, correctPlace], hintNumber) => {
+                    let [isValid, log] = checkHint(code, hint, correctCount, correctPlace, hintNumber + 1);
+                    logEntry += log;
+                    if (!isValid) {
+                        valid = false;
+                        return;
+                    }
+                });
+                
+                if (valid) {
+                    validCombinations.push(code);
+                    logEntry += `Combination ${code} is VALID and satisfies all hints!\n`;
+                }
+                
+                processLog += logEntry + "\n";
+            });
+            
+            document.getElementById("verification-process").textContent = processLog;
+            document.getElementById("final-result").textContent = `Successful Combinations: ${validCombinations.length > 0 ? validCombinations.join(", ") : "No Solutions Found"}`;
+        }
+    </script>
+</body>
+</html>
